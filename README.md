@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Veterán Cup Letohrad – Next.js
 
-## Getting Started
+Profesionální přepis původního PHP webu do **Next.js 16** s **MySQL** databází.
 
-First, run the development server:
+## Technologie
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS**
+- **MySQL** (mysql2)
+- **JWT** pro admin autentizaci (s podporou starého MD5 z PHP)
+
+## Struktura projektu
+
+```
+veteran-cup-next/
+├── src/
+│   ├── app/              # Stránky a API routes
+│   │   ├── admin/        # Admin sekce
+│   │   ├── api/          # API endpoints
+│   │   ├── clanek/       # Detail článku
+│   │   ├── profil-osobnosti/
+│   │   └── ...
+│   ├── components/       # React komponenty
+│   └── lib/              # DB, auth, data helpers
+├── public/               # Statické soubory (img, favicon, ...)
+├── sql/
+│   └── schema.sql       # Databázové schéma
+└── .env.local            # Konfigurace (viz níže)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Instalace
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Databáze
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Spusťte schéma v MySQL (phpMyAdmin nebo příkazová řádka):
 
-## Learn More
+```bash
+mysql -u root -p < sql/schema.sql
+```
 
-To learn more about Next.js, take a look at the following resources:
+Nebo zkopírujte obsah `sql/schema.sql` do phpMyAdmin a spusťte.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Důležité:** Pokud migrujete z původního PHP webu, databáze `veterancup` už existuje. Schéma používá `CREATE TABLE IF NOT EXISTS`, takže stávající tabulky zůstanou zachovány.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Konfigurace
 
-## Deploy on Vercel
+Zkopírujte `.env.local.example` na `.env.local` a upravte:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=veterancup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+JWT_SECRET=nahradte-nahodnym-heslem-pro-produkci
+```
+
+### 3. Spuštění
+
+```bash
+npm install
+npm run dev
+```
+
+Web běží na [http://localhost:3000](http://localhost:3000).
+
+## Admin přístup
+
+- **URL:** `/admin`
+- **Přihlášení:** `/admin/login`
+
+Autentizace podporuje:
+- **MD5 hesla** (původní PHP admin) – stávající uživatelé fungují
+- **bcrypt** – pro nové účty (doporučeno)
+
+Pro vytvoření nového admina s bcrypt heslem:
+
+```sql
+-- Vygenerujte hash např. na https://bcrypt-generator.com/
+INSERT INTO users_veteran (username, password) 
+VALUES ('admin', '$2a$10$...váš_bcrypt_hash...');
+```
+
+## Migrace z PHP
+
+1. **Assety:** Složky `img`, `favicon`, `profilovky`, `partneri-2025`, `sponzori-2025`, `stazeni` jsou zkopírovány do `public/`.
+2. **Databáze:** Použijte stávající databázi `veterancup` – schéma je kompatibilní.
+3. **Články:** Pole `foto` může obsahovat cestu s `../` – kód to normalizuje.
+
+## Produkce
+
+```bash
+npm run build
+npm start
+```
+
+Pro produkci nastavte v `.env.local`:
+- `DB_HOST`, `DB_USER`, `DB_PASSWORD` pro produkční MySQL
+- Silné `JWT_SECRET`
+
+## Rozšíření adminu
+
+Stránky `/admin/osobnosti`, `/admin/clanky`, `/admin/sponzori` jsou zatím placeholdery. CRUD operace lze doplnit podle vzoru `/admin/prispevky`.
