@@ -23,6 +23,7 @@ export default function LogoItem({ src = '', alt, href, apiLogo, logoCacheBust }
         className={imgClass}
         sizes="112px"
         unoptimized
+        placeholder="empty"
       />
     </div>
   ) : (
@@ -33,6 +34,8 @@ export default function LogoItem({ src = '', alt, href, apiLogo, logoCacheBust }
         fill
         className={imgClass}
         sizes="112px"
+        unoptimized
+        placeholder="empty"
       />
     </div>
   );

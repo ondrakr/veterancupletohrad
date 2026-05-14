@@ -26,14 +26,15 @@ export async function POST(request: Request) {
 
     const ext = mime === 'image/jpeg' ? '.jpg' : mime === 'image/png' ? '.png' : mime === 'image/webp' ? '.webp' : '.gif';
     const name = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}${ext}`;
-    const dir = path.join(process.cwd(), 'public', 'uploads', 'clanky');
+    const dir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(dir, { recursive: true });
     const filePath = path.join(dir, name);
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(filePath, buffer);
 
-    const publicPath = `/uploads/clanky/${name}`;
-    return NextResponse.json({ path: publicPath });
+    // Ukladame kompatibilni cestu jako puvodni PHP web: ../uploads/<soubor>
+    const dbPath = `../uploads/${name}`;
+    return NextResponse.json({ path: dbPath });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Chyba při nahrávání' }, { status: 500 });

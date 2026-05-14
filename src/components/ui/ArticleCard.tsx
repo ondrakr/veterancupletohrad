@@ -54,6 +54,7 @@ export default function ArticleCard({ id, nadpis, foto, datum, perex, obsah }: A
           alt={nadpis}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
+          randomFallbackOnError={false}
         />
       </div>
       <div className="p-5">

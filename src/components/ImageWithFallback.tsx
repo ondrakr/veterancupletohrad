@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getRandomFallbackPhoto } from '@/lib/img';
 
 type Props = {
@@ -10,6 +10,10 @@ type Props = {
   fill?: boolean;
   className?: string;
   sizes?: string;
+  /** Při selhání načtení nahradit náhodnou fotkou (osobnosti). U článků vypnout – jinak vypadá jako „špatná“ fotka i při správné DB cestě. */
+  randomFallbackOnError?: boolean;
+  /** Lokální uploads často spolehlivěji bez optimalizátoru (standalone / různé formáty). */
+  unoptimized?: boolean;
 };
 
 export default function ImageWithFallback({
@@ -18,8 +22,17 @@ export default function ImageWithFallback({
   fill = false,
   className = '',
   sizes,
+  randomFallbackOnError = true,
+  unoptimized,
 }: Props) {
   const [imgSrc, setImgSrc] = useState(src);
+
+  useEffect(() => {
+    setImgSrc(src);
+  }, [src]);
+
+  const effectiveUnoptimized =
+    unoptimized ?? (imgSrc.startsWith('/uploads/') || /^https?:\/\//i.test(imgSrc));
 
   return (
     <Image
@@ -28,7 +41,10 @@ export default function ImageWithFallback({
       fill={fill}
       className={className}
       sizes={sizes}
-      onError={() => setImgSrc(getRandomFallbackPhoto())}
+      unoptimized={effectiveUnoptimized}
+      onError={() => {
+        if (randomFallbackOnError) setImgSrc(getRandomFallbackPhoto());
+      }}
     />
   );
 }

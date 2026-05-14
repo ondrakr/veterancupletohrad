@@ -1,14 +1,14 @@
+import { type Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ChevronRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-  title: 'Charitativní hokejbalový turnaj 2026',
+export const metadata: Metadata = {
+  title: { absolute: 'Veterán Cup Letohrad' },
 };
 
-import ImageWithFallback from '@/components/ImageWithFallback';
 import HeroSection from '@/components/HeroSection';
 import LogoMarquee from '@/components/LogoMarquee';
 import {
@@ -110,7 +110,7 @@ export default async function HomePage() {
               <p className="text-[var(--secondary)] text-lg md:text-xl font-bold m-0 mt-1">
                 LETOHRAD
               </p>
-              <p className="text-gray-600 text-sm md:text-base m-0 mt-2">
+              <p className="text-black text-sm md:text-xl font-semibold m-0 mt-2">
                 Akce se koná pod záštitou senátora ČR a starosty města Letohrad Petra Fialy
               </p>
             </div>
@@ -235,6 +235,42 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+
+          <section aria-label="Záštita akce">
+            <div className="bg-white overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-end gap-2 sm:gap-4 lg:gap-8">
+                <div className="order-2 lg:order-1 text-left">
+                  <p className="m-0 text-[var(--secondary)] text-lg sm:text-xl md:text-2xl font-bold uppercase leading-tight">
+                    Veterán Cup Letohrad 2026
+                  </p>
+                  <p className="m-0 mt-1.5 sm:mt-2 text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed">
+                    zaštituje senátor České Republiky, starosta města Letohrad a předseda hnutí MY
+                  </p>
+                  <p className="m-0 mt-2 sm:mt-3 text-[var(--foreground)] text-2xl sm:text-3xl md:text-4xl font-extrabold leading-none">
+                    Petr Fiala
+                  </p>
+                </div>
+                <div className="order-1 lg:order-2 relative h-[170px] sm:h-[220px] lg:h-[320px]">
+                  <Image
+                    src="/image/petr-fiala.webp"
+                    alt="Petr Fiala"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain object-left-bottom lg:object-right-bottom"
+                  />
+                  <div className="absolute top-1 left-1 lg:left-auto lg:right-3 w-[52px] sm:w-[70px] lg:w-[110px]">
+                    <Image
+                      src="/image/logo-my.png"
+                      alt="Logo hnutí MY"
+                      width={300}
+                      height={126}
+                      className="w-full h-auto"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Sekce moderátorka – prozatím skryta, odkomentovat pro zobrazení
           <div>

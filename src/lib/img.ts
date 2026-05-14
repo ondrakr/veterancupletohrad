@@ -30,9 +30,24 @@ export function getRandomFallbackPhoto(): string {
   return FALLBACK_PHOTOS[Math.floor(Math.random() * FALLBACK_PHOTOS.length)];
 }
 
-/** Normalizuje cestu k obrázku z DB (PHP migrace: ../uploads -> /uploads) */
+/**
+ * Jednotná cesta k souboru pod /public (uploads, migrace z PHP: ../uploads/…).
+ * Absolutní URL a protokol-relative (//…) nechá beze změny.
+ */
+export function normalizeUploadedAssetPath(path: string): string {
+  let p = path.trim().replace(/\\/g, '/');
+  if (!p) return p;
+  if (/^data:image\//i.test(p)) return p;
+  if (/^https?:\/\//i.test(p)) return p;
+  if (p.startsWith('//')) return p;
+  while (p.startsWith('../')) p = p.slice(3);
+  if (!p.startsWith('/')) p = `/${p}`;
+  return p;
+}
+
+/** Normalizuje cestu k úvodní fotce z DB (PHP migrace: ../uploads -> /uploads) */
 export function normalizeFotoPath(foto: string | null | undefined): string {
-  if (!foto) return getRandomFallbackPhoto();
-  const p = foto.replace(/^\.\.\//, '/');
-  return p.startsWith('/') ? p : `/${p}`;
+  const raw = typeof foto === 'string' ? foto.trim() : '';
+  if (!raw) return getRandomFallbackPhoto();
+  return normalizeUploadedAssetPath(raw);
 }

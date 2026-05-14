@@ -18,13 +18,8 @@ const MEDIALNI_PARTNERI = [
 export default async function SponzoriPage() {
   const partneri2025 = getLogosFromFolder('partneri-2025');
   const sponzori2025 = getLogosFromFolder('sponzori-2025');
-  // 2024 a 2023: složka sponzori (podle sponzori.php – sponzori-2024/2023 neexistují, používá se sponzori)
-  const sponzori2024 = getLogosFromFolder('sponzori-2024').length > 0
-    ? getLogosFromFolder('sponzori-2024')
-    : getLogosFromFolder('sponzori');
-  const sponzori2023 = getLogosFromFolder('sponzori-2023').length > 0
-    ? getLogosFromFolder('sponzori-2023')
-    : getLogosFromFolder('sponzori');
+
+  const sponzori2024 = getLogosFromFolder('sponzori');
 
   let partneriDb: Awaited<ReturnType<typeof getSponzori>> = [];
   let sponzoriDb: Awaited<ReturnType<typeof getSponzori>> = [];
@@ -90,8 +85,8 @@ export default async function SponzoriPage() {
       )}
 
       <CollapsibleSection title="Ročník 2025" defaultOpen={false}>
-        <div className="flex flex-col gap-8">
-          <div className="pt-4">
+        <div className="flex flex-col gap-8 pt-4">
+          <div>
             <h3 className="text-base font-bold text-[var(--secondary)] uppercase mb-4">Mediální partneři</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {MEDIALNI_PARTNERI.map((item) => (
@@ -104,7 +99,7 @@ export default async function SponzoriPage() {
               <h3 className="text-base font-bold text-[var(--secondary)] uppercase mb-4">Partneři</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {partneri2025.map((item) => (
-                  <LogoItem key={item.src} src={item.src} alt={item.alt} />
+                  <LogoItem key={`2025-p-${item.src}`} src={item.src} alt={item.alt} />
                 ))}
               </div>
             </div>
@@ -114,7 +109,7 @@ export default async function SponzoriPage() {
               <h3 className="text-base font-bold text-[var(--secondary)] uppercase mb-4">Sponzoři</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {sponzori2025.map((item) => (
-                  <LogoItem key={item.src} src={item.src} alt={item.alt} />
+                  <LogoItem key={`2025-s-${item.src}`} src={item.src} alt={item.alt} />
                 ))}
               </div>
             </div>
@@ -128,20 +123,7 @@ export default async function SponzoriPage() {
             <h3 className="text-base font-bold text-[var(--secondary)] uppercase mb-4">Sponzoři</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {sponzori2024.map((item) => (
-                <LogoItem key={item.src} src={item.src} alt={item.alt} />
-              ))}
-            </div>
-          </div>
-        </CollapsibleSection>
-      )}
-
-      {sponzori2023.length > 0 && (
-        <CollapsibleSection title="Ročník 2023" defaultOpen={false}>
-          <div className="pt-4">
-            <h3 className="text-base font-bold text-[var(--secondary)] uppercase mb-4">Sponzoři</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sponzori2023.map((item) => (
-                <LogoItem key={item.src} src={item.src} alt={item.alt} />
+                <LogoItem key={`2024-s-${item.src}`} src={item.src} alt={item.alt} />
               ))}
             </div>
           </div>

@@ -260,6 +260,66 @@ Pro optimalizaci log sponzorů z API přidej v `next.config.ts` svou doménu do 
 
 ---
 
+## Nasazení přes standalone archiv (`pack:standalone`)
+
+Na **lokálním počítači** (v kořeni repozitáře):
+
+```bash
+npm run pack:standalone
+```
+
+Vznikne `veterancup-standalone.tar.gz` (build + `.next/static` + `public`, uvnitř archivu je `server.js` v kořeni). Soubor **neobsahuje** `.env` – na serveru musí být `.env` v `/var/www/veterancup/` už nastavený.
+
+**Nahrání na server** (uprav IP a uživatele podle sebe):
+
+```bash
+scp veterancup-standalone.tar.gz administrator@10.0.9.43:~/
+```
+
+**Na serveru** (SSH jako `administrator`, pak podle potřeby `sudo su`). Pozor na cestu: domovský adresář je `/home/administrator/` (ne zkrácený překlep).
+
+```bash
+# 1) Rozbalení
+mkdir -p /tmp/vc-deploy
+tar xzf /home/administrator/veterancup-standalone.tar.gz -C /tmp/vc-deploy
+
+# 2) Kontrola – musí tu být server.js
+ls -la /tmp/vc-deploy/server.js
+
+# 3) Sync do produkce (ecosystem na serveru nepřepisovat)
+sudo rsync -a --delete \
+  --exclude='ecosystem.config.cjs' \
+  /tmp/vc-deploy/ /var/www/veterancup/
+
+# 4) Vlastník – pod kým běží PM2 (např. gitdeploy)
+sudo chown -R gitdeploy:gitdeploy /var/www/veterancup
+
+# 5) Úklid
+rm -rf /tmp/vc-deploy
+```
+
+**Sharp na Linuxu** (povinné po nasazení z Macu/Windows): v balíčku je skript `install-sharp-on-linux.sh` – bez něj uvidíš v logu `Could not load the "sharp" module using the linux-x64 runtime`.
+
+```bash
+sudo su - gitdeploy
+cd /var/www/veterancup
+./install-sharp-on-linux.sh
+```
+
+(Alternativa: `npm install --os=linux --cpu=x64 sharp`. Server musí mít výstup na internet kvůli npm. Po každém novém tarbalu z jiného OS znovu spusť skript, případně po změně verze `sharp` v `package.json`.)
+
+**Restart aplikace** (jako uživatel, pod kterým běží PM2):
+
+```bash
+cd /var/www/veterancup
+pm2 restart veterancup
+pm2 logs veterancup --lines 30
+```
+
+PM2 musí spouštět `node server.js` (nebo ekvivalent) z `/var/www/veterancup`, kde po rsyncu leží rozbalený standalone.
+
+---
+
 ## Kontrolní seznam před spuštěním
 
 - [ ] MySQL běží a databáze existuje

@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
+import { normalizeArticleImageSrc } from '@/lib/html';
 
 const ReactQuill = dynamic(
   () => import('react-quill-new').then((mod) => mod.default),
@@ -27,24 +28,31 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const quillRef = useRef<{ getEditor: () => { getSelection: (focus?: boolean) => { index: number }; insertEmbed: (index: number, type: string, value: string) => void; setSelection: (index: number) => void } } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState('');
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
       const res = await fetch(imageUploadUrl, { method: 'POST', body: fd });
       const data = await res.json();
-      if (res.ok && data.path) {
-        const quill = quillRef.current?.getEditor?.();
-        if (quill) {
-          const range = quill.getSelection(true);
-          const index = range?.index ?? (quill as unknown as { getLength: () => number }).getLength();
-          quill.insertEmbed(index, 'image', data.path);
-          quill.setSelection(index + 1);
-        }
+      if (!res.ok || !data.path) {
+        setUploadError(typeof data.error === 'string' ? data.error : 'Obrázek se nepodařilo nahrát');
+        return;
       }
+      const imageUrl = normalizeArticleImageSrc(String(data.path));
+      const quill = quillRef.current?.getEditor?.();
+      if (quill) {
+        const range = quill.getSelection(true);
+        const index = range?.index ?? (quill as unknown as { getLength: () => number }).getLength();
+        quill.insertEmbed(index, 'image', imageUrl);
+        quill.setSelection(index + 1);
+      }
+    } catch {
+      setUploadError('Chyba připojení při nahrávání obrázku');
     } finally {
       e.target.value = '';
     }
@@ -72,6 +80,11 @@ export default function RichTextEditor({
 
   return (
     <div className={`rich-text-editor ${className}`}>
+      {uploadError && (
+        <p className="text-sm text-red-600 mb-2" role="alert">
+          {uploadError}
+        </p>
+      )}
       {imageUploadUrl && (
         <input
           ref={fileInputRef}

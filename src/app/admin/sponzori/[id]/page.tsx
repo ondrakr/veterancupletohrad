@@ -2,6 +2,8 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAuth } from '@/lib/auth';
 import db from '@/lib/db';
+import { parsePositiveIntId } from '@/lib/parse-id';
+import { normalizeSponsorTyp } from '@/lib/sponzoriTyp';
 import AdminSponzorEditForm from './AdminSponzorEditForm';
 
 export default async function AdminSponzorEditPage({
@@ -13,9 +15,11 @@ export default async function AdminSponzorEditPage({
   if (!auth) redirect('/admin/login');
 
   const { id } = await params;
+  const idNum = parsePositiveIntId(id);
+  if (idNum == null) notFound();
   const [rows] = await db.query<any[]>(
-    'SELECT id, typ, nazev, odkaz FROM sponzori WHERE id = ?',
-    [id]
+    'SELECT id, CAST(typ AS CHAR) AS typ, nazev, odkaz FROM sponzori WHERE id = ?',
+    [idNum]
   );
   const s = rows[0];
   if (!s) notFound();
@@ -28,7 +32,7 @@ export default async function AdminSponzorEditPage({
       <h1 className="text-2xl font-bold mb-6">Upravit sponzora/partnera</h1>
       <AdminSponzorEditForm
         id={s.id}
-        typ={s.typ}
+        typ={normalizeSponsorTyp(s.typ)}
         nazev={s.nazev}
         odkaz={s.odkaz || ''}
       />

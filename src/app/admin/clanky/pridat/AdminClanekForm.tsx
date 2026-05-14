@@ -5,12 +5,26 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/components/RichTextEditor';
 
+const CATEGORY_OPTIONS = [
+  { value: 'c', label: 'Článek' },
+  { value: 'r', label: 'Rozhovor' },
+];
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Nepodařilo se přečíst soubor'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminClanekForm() {
   const [nadpis, setNadpis] = useState('');
   const [obsah, setObsah] = useState('');
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [kategorie, setKategorie] = useState('');
+  const [kategorie, setKategorie] = useState<'c' | 'r'>('c');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fotoInputRef = useRef<HTMLInputElement>(null);
@@ -40,17 +54,9 @@ export default function AdminClanekForm() {
     setLoading(true);
     setError('');
     try {
-      let fotoPath: string | null = null;
+      let fotoDataUrl: string | null = null;
       if (fotoFile) {
-        const fd = new FormData();
-        fd.append('file', fotoFile);
-        const upRes = await fetch('/api/admin/clanky/upload', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (!upRes.ok) {
-          setError(upData.error || 'Chyba při nahrávání fotky');
-          return;
-        }
-        fotoPath = upData.path;
+        fotoDataUrl = await fileToDataUrl(fotoFile);
       }
       const res = await fetch('/api/admin/clanky', {
         method: 'POST',
@@ -58,7 +64,7 @@ export default function AdminClanekForm() {
         body: JSON.stringify({
           nadpis,
           obsah: obsah || null,
-          foto: fotoPath,
+          foto: fotoDataUrl,
           kategorie: kategorie || null,
         }),
       });
@@ -118,12 +124,17 @@ export default function AdminClanekForm() {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Kategorie</label>
-        <input
-          type="text"
+        <select
           value={kategorie}
-          onChange={(e) => setKategorie(e.target.value)}
+          onChange={(e) => setKategorie(e.target.value as 'c' | 'r')}
           className="w-full border border-gray-300 rounded-[var(--radius)] px-4 py-2"
-        />
+        >
+          {CATEGORY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
       {error && <p className="text-red-600">{error}</p>}
       <div className="flex gap-3">

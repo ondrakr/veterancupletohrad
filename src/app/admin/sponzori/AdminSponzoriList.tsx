@@ -1,26 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { normalizeSponsorTyp } from '@/lib/sponzoriTyp';
 
 type Sponzor = { id: number; typ: string; nazev: string; odkaz: string | null };
 
 export default function AdminSponzoriList() {
-  const searchParams = useSearchParams();
   const [sponzori, setSponzori] = useState<Sponzor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mountTime] = useState(() => Date.now());
-  const logoCacheBust = searchParams.get('r') || String(mountTime);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const logoCacheBustRef = useRef(String(Date.now()));
 
   useEffect(() => {
     fetch('/api/admin/sponzori')
-      .then((r) => r.json())
-      .then((data) => {
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          setLoadError(typeof data?.error === 'string' ? data.error : 'Chyba načtení seznamu');
+          setSponzori([]);
+          return;
+        }
+        setLoadError(null);
         setSponzori(Array.isArray(data) ? data : []);
       })
-      .catch(() => setSponzori([]))
+      .catch(() => {
+        setLoadError('Chyba připojení');
+        setSponzori([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -35,10 +43,12 @@ export default function AdminSponzoriList() {
   }
 
   if (loading) return <p className="text-gray-600">Načítám...</p>;
+  if (loadError) return <p className="text-red-600">{loadError}</p>;
   if (!sponzori.length) return <p className="text-gray-600">Žádní sponzoři ani partneři.</p>;
 
-  const partneri = sponzori.filter((s) => s.typ === 'partner');
-  const sponzoriOnly = sponzori.filter((s) => s.typ === 'sponzor');
+  const logoCacheBust = logoCacheBustRef.current;
+  const partneri = sponzori.filter((s) => normalizeSponsorTyp(s.typ) === 'partner');
+  const sponzoriOnly = sponzori.filter((s) => normalizeSponsorTyp(s.typ) === 'sponzor');
 
   return (
     <div className="space-y-8">

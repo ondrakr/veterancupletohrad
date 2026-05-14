@@ -39,6 +39,7 @@ yarn-error.log*
 
 # deploy archive
 veterancup-deploy.tar.gz
+veterancup-standalone.tar.gz
 
 # typescript
 *.tsbuildinfo

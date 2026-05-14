@@ -1,4 +1,5 @@
 import db from './db';
+import { mapArticleRow } from './article-photo';
 
 export async function getCastka() {
   const [rows] = await db.query<any[]>('SELECT castka FROM vybrana_castka LIMIT 1');
@@ -33,7 +34,7 @@ export async function getClanky(
     offset = limitOrOptions.offset;
   }
   const sql =
-    'SELECT id, nadpis, foto, obsah, datum FROM clanky ORDER BY datum DESC, id DESC' +
+    'SELECT id, nadpis, foto, foto_blob, foto_mime_type, obsah, datum FROM clanky ORDER BY datum DESC, id DESC' +
     (limit != null
       ? offset != null
         ? ' LIMIT ? OFFSET ?'
@@ -43,7 +44,7 @@ export async function getClanky(
   if (limit != null) params.push(limit);
   if (offset != null) params.push(offset);
   const [rows] = await db.query<any[]>(sql, params);
-  return rows;
+  return rows.map(mapArticleRow);
 }
 
 export async function getClankyCount() {
@@ -52,11 +53,14 @@ export async function getClankyCount() {
 }
 
 export async function getClanek(id: number) {
+  if (!Number.isFinite(id) || id < 1 || !Number.isInteger(id)) {
+    return null;
+  }
   const [rows] = await db.query<any[]>(
-    'SELECT id, nadpis, foto, obsah FROM clanky WHERE id = ?',
+    'SELECT id, nadpis, foto, foto_blob, foto_mime_type, obsah FROM clanky WHERE id = ?',
     [id]
   );
-  return rows[0] || null;
+  return rows[0] ? mapArticleRow(rows[0]) : null;
 }
 
 export async function getOsobnosti(filters?: { rok?: number; tym?: string }) {

@@ -6,6 +6,26 @@ import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/components/RichTextEditor';
 import { normalizeFotoPath } from '@/lib/img';
 
+const CATEGORY_OPTIONS = [
+  { value: 'c', label: 'Článek' },
+  { value: 'r', label: 'Rozhovor' },
+] as const;
+
+function normalizeCategory(value: string): 'c' | 'r' {
+  const v = value.trim().toLowerCase();
+  if (v === 'r' || v === 'rozhovor') return 'r';
+  return 'c';
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Nepodařilo se přečíst soubor'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminClanekEditForm({
   id,
   nadpis,
@@ -24,7 +44,7 @@ export default function AdminClanekEditForm({
   const [fotoPath, setFotoPath] = useState(foto || '');
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [k, setK] = useState(kategorie);
+  const [k, setK] = useState<'c' | 'r'>(normalizeCategory(kategorie || 'c'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fotoInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +70,7 @@ export default function AdminClanekEditForm({
     if (fotoPreview) URL.revokeObjectURL(fotoPreview);
     setFotoPreview(null);
     if (fotoInputRef.current) fotoInputRef.current.value = '';
-    if (!fotoPreview) setFotoPath('');
+    setFotoPath('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,15 +80,7 @@ export default function AdminClanekEditForm({
     try {
       let finalFoto: string | null = fotoPath || null;
       if (fotoFile) {
-        const fd = new FormData();
-        fd.append('file', fotoFile);
-        const upRes = await fetch('/api/admin/clanky/upload', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (!upRes.ok) {
-          setError(upData.error || 'Chyba při nahrávání fotky');
-          return;
-        }
-        finalFoto = upData.path;
+        finalFoto = await fileToDataUrl(fotoFile);
       }
       const res = await fetch(`/api/admin/clanky/${id}`, {
         method: 'PUT',
@@ -136,12 +148,17 @@ export default function AdminClanekEditForm({
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Kategorie</label>
-        <input
-          type="text"
+        <select
           value={k}
-          onChange={(e) => setK(e.target.value)}
+          onChange={(e) => setK(e.target.value as 'c' | 'r')}
           className="w-full border border-gray-300 rounded-[var(--radius)] px-4 py-2"
-        />
+        >
+          {CATEGORY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
       {error && <p className="text-red-600">{error}</p>}
       <div className="flex gap-3">

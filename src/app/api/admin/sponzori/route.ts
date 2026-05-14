@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth';
 import db from '@/lib/db';
-import { processSponsorLogo } from '@/lib/logoResize';
+
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_SIZE = 8 * 1024 * 1024; // 8 MB
 
 export async function GET() {
   const auth = await getAuth();
@@ -9,7 +11,7 @@ export async function GET() {
 
   try {
     const [rows] = await db.query<any[]>(
-      'SELECT id, typ, nazev, odkaz, poradi FROM sponzori ORDER BY poradi ASC, id ASC'
+      'SELECT id, CAST(typ AS CHAR) AS typ, nazev, odkaz, poradi FROM sponzori ORDER BY poradi ASC, id ASC'
     );
     return NextResponse.json(rows);
   } catch (error) {
@@ -35,10 +37,15 @@ export async function POST(request: Request) {
     if (!logoFile || !logoFile.size) {
       return NextResponse.json({ error: 'Logo je povinné' }, { status: 400 });
     }
+    if (logoFile.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'Logo je příliš velké (max 8 MB)' }, { status: 400 });
+    }
 
-    const inputBuffer = Buffer.from(await logoFile.arrayBuffer());
-    const inputMimeType = logoFile.type || 'image/png';
-    const { buffer, mimeType } = await processSponsorLogo(inputBuffer, inputMimeType);
+    const mimeType = String(logoFile.type || '').toLowerCase();
+    if (!ALLOWED_TYPES.includes(mimeType)) {
+      return NextResponse.json({ error: 'Neplatný formát obrázku. Použijte JPG, PNG nebo WebP.' }, { status: 400 });
+    }
+    const buffer = Buffer.from(await logoFile.arrayBuffer());
     const typVal = typ === 'partner' ? 'partner' : 'sponzor';
 
     const [result] = await db.query<any>(
@@ -47,10 +54,6 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ id: result.insertId, success: true });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    if (msg.includes('Unsupported') || msg.includes('Input')) {
-      return NextResponse.json({ error: 'Neplatný formát obrázku. Použijte JPG, PNG nebo WebP.' }, { status: 400 });
-    }
     console.error('DB error:', error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
